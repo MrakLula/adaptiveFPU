@@ -6,103 +6,122 @@ include 'win32a.inc'
 
 section '.data' data readable writable
 
-	formatFloat db '%d.%d',0
-	debugFormat db 10,13,'%d',0
+        formatFloat db '%d.%d',0
+        debugFormat db 10,13,'%d',0
 
 
 
-	floatBase dd 200005
-	floatDotPos db 4
+        floatBase dd 11200007
+        floatDotPos db 4
 
-	HighParticalBuffer dd ?
-	LowParticalBuffer dd ?
+        HighParticalBuffer dd ?
+        LowParticalBuffer dd ?
+  
+  FloatTextBase Rb 8
+  TextVar dd 1000000
 
-	TextLPB Rb 8
-	TextCounterX dd 100000
+
+        macro fullClr
+        {
+         xor eax, eax
+         xor ebx, ebx
+         xor edx, edx
+         xor ecx, ecx
+        }
+
+        macro clr reg
+        {
+        xor reg, reg
+        }
+
+
+        macro CalcDotPosition
+        {
+         movsx eax, [floatDotPos]
+                mov ecx, 1
+                dotpos:
+
+
+                        imul ecx, 10
+
+       
+
+                        inc edx
+                        cmp edx, eax
+                 jne dotpos
+                 clr edx
+        }
+
+        macro SetLPB
+        {
+          mov eax, [floatBase]
+          div ecx
+
+          mov [LowParticalBuffer], edx
+
+        }
+
+        macro SetHPB
+        {
+          clr eax
+          clr edx
+
+          mov eax, [floatBase]
+
+          div ecx
+
+          mov  [HighParticalBuffer] , eax
+
+        }
+
+        macro ShowResult
+        {
+         push [LowParticalBuffer]
+         push [HighParticalBuffer]
+         push formatFloat
+         call[printf]
+
+        }
+
+        macro ExitProgram
+        {
+          call[getch]
+
+          push NULL
+          call[ExitProcess]
+
+
+
+
+        }
 
 
      NULL = 0
 section '.code' code readable executable
-	start:
-		xor eax, eax
-		xor ebx, ebx
-		xor edx, edx
-		xor ecx, ecx
+        start:
+                fullClr
+                CalcDotPosition
 
-		movsx eax, [floatDotPos]
-		mov ecx, 1
-		dotpos:
+                SetLPB
+                SetHPB
 
 
-			imul ecx, 10
+                ShowResult
 
 
 
-			inc edx
-			cmp edx, eax
-		 jne dotpos
+                ExitProgram
 
-
-	       mov eax, [floatBase]
-	       div ecx
-
-		mov [LowParticalBuffer], edx
-
-
-
-		xor eax, eax
-		xor edx, edx
-
-		mov eax, [floatBase]
-
-
-		div ecx
-
-
-		mov  [HighParticalBuffer] , eax
-
-
-		;xor ebx, ebx
-		;xor edx, edx
-		;xor ecx, ecx
-
-
-
-		;setTextLPB:
-		;xor eax, eax
-		;mov eax, [floatBase]
-		;div [TextCounterX]
-
-
-
-		;inc edx
-		;cmp edx, 6
-		;jne TextLPB
-
-
-		push [LowParticalBuffer]
-		push [HighParticalBuffer]
-		push formatFloat
-		call[printf]
-
-		push TextLPB
-		push debugFormat
-		call[printf]
-
-		call[getch]
-
-		push NULL
-		call[ExitProcess]
 
 section '.idata' import data readable
 
-	library kernel, 'kernel32.dll',\
-		msvcrt, 'msvcrt.dll'
+        library kernel, 'kernel32.dll',\
+                msvcrt, 'msvcrt.dll'
 
-	import kernel,\
-	       ExitProcess, 'ExitProcess'
+        import kernel,\
+               ExitProcess, 'ExitProcess'
 
-	import msvcrt,\
-	       printf, 'printf',\
-	       getch, '_getch',\
-	       scanf, 'scanf'
+        import msvcrt,\
+               printf, 'printf',\
+               getch, '_getch',\
+               scanf, 'scanf'
