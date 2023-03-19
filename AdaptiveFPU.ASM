@@ -7,19 +7,18 @@ include 'win32a.inc'
 section '.data' data readable writable
 
         formatFloat db '%d.%d',0
-        debugFormat db 10,13,'%d',0
+        debugNSFormat db 10,13,'%s',0
+        debugNNFormat db 10,13,'%d',0
 
 
+        floatBase dd 3333
+        floatDotPos db 2
 
-        floatBase dd 11200007
-        floatDotPos db 4
 
         HighParticalBuffer dd ?
         LowParticalBuffer dd ?
-  
-  FloatTextBase Rb 8
-  TextVar dd 1000000
 
+        NULL = 0
 
         macro fullClr
         {
@@ -58,6 +57,7 @@ section '.data' data readable writable
           div ecx
 
           mov [LowParticalBuffer], edx
+          add [LowParticalBuffer], ecx
 
         }
 
@@ -90,13 +90,12 @@ section '.data' data readable writable
           push NULL
           call[ExitProcess]
 
-
-
-
         }
 
 
-     NULL = 0
+
+
+
 section '.code' code readable executable
         start:
                 fullClr
