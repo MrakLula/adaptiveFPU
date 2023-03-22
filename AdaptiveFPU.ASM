@@ -7,17 +7,23 @@ include 'C:\Program Files\FASM\INCLUDE\win32a.inc'
 section '.data' data readable writable
 
 	formatFloat db '%d.%d',0
+	formatFloatText db '%d.%s',0
 	debugNSFormat db 10,13,'%s',0
 	debugNNFormat db 10,13,'%d',0
 
 
-	floatBase dd 3333
-	floatDotPos db 2
+	floatBase dd 00123
+	floatDotPos db 4
 
 
 
 	HighParticalBuffer dd ?
 	LowParticalBuffer dd ?
+
+	InvertextLPB Rd 10
+	TextLPB Rb 10
+	charCounter dd 1
+	divider db 10
 
 	NULL = 0
 
@@ -77,9 +83,62 @@ section '.data' data readable writable
 
 	}
 
+	macro NumberLPBconvertTextLPB LPB, TextBuffer, InvertBuffer, counter
+	{
+	;Все регистры обнуленны
+	mov eax, [LPB]
+			lp:
+                clr edx
+        
+
+                div dword[divider]
+
+                
+
+
+                mov [InvertBuffer+ebx], edx
+                add [InvertBuffer+ebx], 48
+                
+                cmp eax, 1
+                je nonZero
+                inc [counter] 
+
+                jmp finish
+                nonZero:
+                finish:
+
+                
+        	inc ebx
+        	cmp ebx,[counter]
+        	jne lp
+
+				clr eax
+                clr ebx
+                clr ecx
+
+                dec [counter]
+
+                mov ebx , [counter] 
+                mov ecx, 0
+
+			wp:
+                xor eax,eax
+                mov eax, [InvertBuffer+ebx]
+                mov dword[TextBuffer+ecx] , eax
+
+
+                inc ecx
+    			dec ebx
+       		cmp ebx, -2
+       	    jne wp
+	
+	
+	
+	}
+
 	macro ShowResult formatP, LPB, HPB
 	{
-	 push [LPB]
+	 push LPB
 	 push [HPB]
 	 push formatP
 	 call[printf]
@@ -114,8 +173,12 @@ section '.code' code readable executable
 		SetHPB floatBase, HighParticalBuffer ;код вычисляет значение старшей части float значения, на входе используется регистр ecx
 			   ;После работы макроса все регистры обнуляются
 
+		NumberLPBconvertTextLPB LowParticalBuffer, TextLPB, InvertextLPB, charCounter 
+			;Макрос конвертирует малдшую часть float значения в текстовую
+			;Например 100.001 | в текстовом формате это 001 а в реальном : 1001
 
-		ShowResult formatFloat, LowParticalBuffer, HighParticalBuffer ;вывод числа в консоль
+
+		ShowResult formatFloatText, TextLPB, HighParticalBuffer ;вывод числа в консоль
 					
 		
 
