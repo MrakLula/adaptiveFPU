@@ -12,8 +12,9 @@ section '.data' data readable writable
 	debugNNFormat db 10,13,'%d',0
 
 
-	floatBase dd 00123
-	floatDotPos db 4
+	floatBase dd 0
+	floatDotPos dd ?
+
 
 
 
@@ -22,6 +23,18 @@ section '.data' data readable writable
 
 	InvertextLPB Rd 10
 	TextLPB Rb 10
+
+	;Input Memory:
+	InputInvBuffer Rb 10
+	counterInput dd 1
+	inputmultiplier dd 1
+	InputFinalBuffer Rd 10
+
+	formatStrI db 10,13,'%s',0; +
+    formatNumI db 10,13,'%d',0;
+
+	;:
+
 	charCounter dd 1
 	divider db 10
 
@@ -43,7 +56,7 @@ section '.data' data readable writable
 
 	macro CalcDotPosition dotPos
 	{
-	 movsx eax, [dotPos]
+	 mov eax, [dotPos]
 		mov ecx, 1
 		dotpos:
 
@@ -136,6 +149,104 @@ section '.data' data readable writable
 	
 	}
 
+	macro InputFloatNumber invertText, counter, dotPos, finalBuffer, multiplier, finalNum, formatStr, formatNum
+        {
+                invoke scanf, formatStr, invertText
+
+                fullClr
+
+                InvBufSet:
+                        movzx eax, byte[invertText+ebx]
+
+                        cmp eax, 0
+                        je zeroFlag ; != 0
+                
+                        inc [counter]
+
+                        jmp finish0
+                        zeroFlag:; == 0
+                finish0:
+
+                
+
+                inc ebx
+                cmp ebx, [counter]
+                jne InvBufSet
+                sub [counter], 1
+
+
+                xor eax,eax
+                xor ebx,ebx
+
+                
+                ruleInvBuf:
+                        xor ecx,ecx
+                
+
+                        movzx eax , byte[invertText+ebx]
+                        cmp eax, '.'
+                        jne notDot ; == '.'
+
+                
+                        mov [dotPos], ebx
+                
+
+                        jmp finish1
+                notDot:; != '.'
+                        
+                                movzx ecx, byte[invertText+ebx]                       
+                                mov [finalBuffer+edx], ecx                       
+                                inc edx
+                                jmp finish1
+                finish1: 
+
+
+                inc ebx
+                cmp ebx, [counter]
+                jne ruleInvBuf
+
+                mov ecx, [counter]
+                sub ecx, [dotPos]
+                mov [dotPos], ecx
+                dec [dotPos] 
+
+                
+                
+                xor ebx, ebx
+                
+                sub [counter], 2
+
+                mov ebx , [counter]
+
+                finalNumSet:
+                xor eax, eax
+                xor edx, edx
+                
+
+                
+
+                movzx eax, byte[finalBuffer+ebx]
+
+                
+                sub eax, 48
+                
+                imul eax, [multiplier]
+                add [finalNum], eax
+
+                 mov edx, [multiplier]
+                 imul edx, 10
+                 mov [multiplier], edx
+
+                dec ebx
+                cmp ebx, -1
+                jne finalNumSet
+        
+        
+        
+				fullClr
+	
+        }
+
 	macro ShowResult formatP, LPB, HPB
 	{
 	 push LPB
@@ -163,7 +274,11 @@ section '.data' data readable writable
 
 section '.code' code readable executable
 	start:
-		fullClr ; Все регистры очищенный
+		 ; Все регистры очищенный
+
+		InputFloatNumber InputInvBuffer, counterInput, floatDotPos, InputFinalBuffer , inputmultiplier, floatBase, formatStrI, formatNumI 
+		; Соблюдена инкапсуляция регистров
+
 		CalcDotPosition floatDotPos ;Регистр eax принимает значение точки (FloatDotPos) || Регистр edx используется как счетчик
 						;Макрос конвертирыет значение точки в нужный делитель  || после завершения макроса регистр ecx попадает в следующий макрос
 
