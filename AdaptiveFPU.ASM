@@ -5,41 +5,48 @@ entry start
 include 'C:\Program Files\FASM\INCLUDE\win32a.inc'
 
 section '.data' data readable writable
-
-	formatFloat db '%d.%d',0
+	;Format tags:
 	formatFloatText db '%d.%s',0
-	debugNSFormat db 10,13,'%s',0
-	debugNNFormat db 10,13,'%d',0
-	formatMF0 db 'MF = 0',10,13,0
-	formatMF1 db 'MF = 1',10,13,0
+	formatNum db '%d',10,13,0
+	
 
-	floatBase dd -314
-	floatDotPos dd 2
-
-
-
-
-	HighParticalBuffer dd ?
-	LowParticalBuffer dd ?
+	;Float Static tags
+	struc typeFloat
+	{ 
+	.floatBase dd 20002 ; 401028
+	.floatDotPos db 3 ; 401032
+	.HighParticalBuffer dd ?
+	.LowParticalBuffer dd ?
+	.TextLPB Rb 10
+	.NF dw 0
+	}
+	_Var typeFloat
+	
+	
 
 	InvertextLPB Rd 10
-	TextLPB Rb 10
 
-	NF db 0
+	
+	
 
+
+	charCounter dd 1
+	divider dd 10
+	
+	
+	
 	;Input Memory:
-	InputInvBuffer Rb 10
-	counterInput dd 1
-	inputmultiplier dd 1
-	InputFinalBuffer Rd 10
+	; InputInvBuffer Rb 10
+	; counterInput dd 1
+	; inputmultiplier dd 1
+	; InputFinalBuffer Rd 10
 
-	formatStrI db 10,13,'%s',0; +
-    formatNumI db 10,13,'%d',0;
+	; formatStrI db 10,13,'%s',0; +
+    ; formatNumI db 10,13,'%d',0;
 
 	;:
 
-	charCounter dd 1
-	divider db 10
+	
 
 	NULL = 0
 
@@ -59,7 +66,7 @@ section '.data' data readable writable
 
 	macro CalcDotPosition dotPos
 	{
-	 mov eax, [dotPos]
+	 movzx eax, byte[dotPos]
 		mov ecx, 1
 		dotpos:
 
@@ -109,7 +116,7 @@ section '.data' data readable writable
                 clr edx
         
 
-                div dword[divider]
+                div [divider]
 
                 
 
@@ -125,14 +132,17 @@ section '.data' data readable writable
                 nonZero:
                 finish:
 
+
                 
         	inc ebx
-        	cmp ebx,[counter]
+        	cmp ebx, [counter]
         	jne lp
 
 				clr eax
                 clr ebx
                 clr ecx
+
+				
 
                 dec [counter]
 
@@ -203,7 +213,7 @@ section '.data' data readable writable
                                 mov [finalBuffer+edx], ecx                       
                                 inc edx
                                 jmp finish1
-                finish1: 
+                finish1:  
 
 
                 inc ebx
@@ -259,7 +269,7 @@ section '.data' data readable writable
 		cmp eax, 0
 
 		jg checkNeg ; < 0
-		mov [MF], 1
+		mov byte[MF], 1
 
 		jmp finish2
 		checkNeg:; > 0
@@ -324,26 +334,26 @@ section '.code' code readable executable
 
 		;InputFloatNumber InputInvBuffer, counterInput, floatDotPos, InputFinalBuffer , inputmultiplier, floatBase, formatStrI, formatNumI 
 		; Соблюдена инкапсуляция регистров
-		fullClr
+		;;;fullClr
 
-		SetNF floatBase, NF
+		SetNF _Var.floatBase, _Var.NF
 
-		CalcDotPosition floatDotPos ;Регистр eax принимает значение точки (FloatDotPos) || Регистр edx используется как счетчик
+		CalcDotPosition _Var.floatDotPos ;Регистр eax принимает значение точки (FloatDotPos) || Регистр edx используется как счетчик
 						;Макрос конвертирыет значение точки в нужный делитель  || после завершения макроса регистр ecx попадает в следующий макрос
 
-		SetLPB floatBase, LowParticalBuffer;Код обрабатывает младщую часть float значения на вход получает регистр ecx
+		SetLPB _Var.floatBase, _Var.LowParticalBuffer;Код обрабатывает младщую часть float значения на вход получает регистр ecx
 			   ;После выполнения очищаются регистры eax,edx
 
-		SetHPB floatBase, HighParticalBuffer ;код вычисляет значение старшей части float значения, на входе используется регистр ecx
+		SetHPB _Var.floatBase, _Var.HighParticalBuffer ;код вычисляет значение старшей части float значения, на входе используется регистр ecx
 			   ;После работы макроса все регистры обнуляются
 
-		NumberLPBconvertTextLPB LowParticalBuffer, TextLPB, InvertextLPB, charCounter 
+		NumberLPBconvertTextLPB _Var.LowParticalBuffer, _Var.TextLPB, InvertextLPB, charCounter 
 			;Макрос конвертирует малдшую часть float значения в текстовую
 			;Например 100.001 | в текстовом формате это 001 а в реальном : 1001
 
-		EditBaseToNG HighParticalBuffer, NF
+		EditBaseToNG _Var.HighParticalBuffer, _Var.NF
 
-		ShowResult formatFloatText, TextLPB, HighParticalBuffer ;вывод числа в консоль
+		ShowResult formatFloatText, _Var.TextLPB, _Var.HighParticalBuffer ;вывод числа в консоль
 					
 		
 
