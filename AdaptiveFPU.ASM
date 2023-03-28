@@ -8,13 +8,15 @@ section '.data' data readable writable
 	;Format tags:
 	formatFloatText db '%d.%s',0
 	formatNum db '%d',10,13,0
+	formatStrT db '%s',10,13,0
+	minusTrue db 'Minus True',10,13,0
 	
 
 	;Float Static tags
 	struc typeFloat
 	{ 
-	.floatBase dd 20002 ; 401028
-	.floatDotPos db 3 ; 401032
+	.floatBase dd 0 ; 401028
+	.floatDotPos db ? ; 401032
 	.HighParticalBuffer dd ?
 	.LowParticalBuffer dd ?
 	.TextLPB Rb 10
@@ -36,13 +38,13 @@ section '.data' data readable writable
 	
 	
 	;Input Memory:
-	; InputInvBuffer Rb 10
-	; counterInput dd 1
-	; inputmultiplier dd 1
-	; InputFinalBuffer Rd 10
+	InputInvBuffer Rb 10
+	counterInput dd 1
+	inputmultiplier dd 1
+	InputFinalBuffer Rd 10
 
-	; formatStrI db 10,13,'%s',0; +
-    ; formatNumI db 10,13,'%d',0;
+	formatStrI db 10,13,'%s',0; +
+    formatNumI db 10,13,'%d',0;
 
 	;:
 
@@ -164,11 +166,29 @@ section '.data' data readable writable
 	
 	}
 
-	macro InputFloatNumber invertText, counter, dotPos, finalBuffer, multiplier, finalNum, formatStr, formatNum
+	macro InputFloatNumber invertText, counter, dotPos, finalBuffer, multiplier, finalNum, formatStr, formatNumб, MF
         {
                 invoke scanf, formatStr, invertText
 
                 fullClr
+
+				movzx ecx, byte[invertText]
+				
+
+				cmp ecx, '-'
+				jne notMinSymbol
+				mov [invertText], '0'
+				mov byte[MF], 2
+
+				jmp finish5
+				notMinSymbol:
+				finish5:
+
+
+
+
+				clr eax
+				clr ecx
 
                 InvBufSet:
                         movzx eax, byte[invertText+ebx]
@@ -187,24 +207,27 @@ section '.data' data readable writable
                 inc ebx
                 cmp ebx, [counter]
                 jne InvBufSet
+
                 sub [counter], 1
 
 
-                xor eax,eax
-                xor ebx,ebx
+                clr eax
+                clr ebx
 
                 
                 ruleInvBuf:
-                        xor ecx,ecx
+                        clr ecx
                 
 
                         movzx eax , byte[invertText+ebx]
                         cmp eax, '.'
                         jne notDot ; == '.'
 
-                
-                        mov [dotPos], ebx
-                
+						mov ecx, dotPos
+                        mov [ecx], ebx
+
+						clr ecx
+
 
                         jmp finish1
                 notDot:; != '.'
@@ -215,27 +238,30 @@ section '.data' data readable writable
                                 jmp finish1
                 finish1:  
 
+				clr eax
 
                 inc ebx
                 cmp ebx, [counter]
                 jne ruleInvBuf
 
+				mov eax, dotPos
+
                 mov ecx, [counter]
-                sub ecx, [dotPos]
-                mov [dotPos], ecx
+                sub ecx, [eax]
+                mov [eax], ecx
                 dec [dotPos] 
 
                 
-                
-                xor ebx, ebx
+                clr eax
+                clr ebx
                 
                 sub [counter], 2
 
                 mov ebx , [counter]
 
                 finalNumSet:
-                xor eax, eax
-                xor edx, edx
+                clr eax
+                clr edx
                 
 
                 
@@ -283,6 +309,14 @@ section '.data' data readable writable
 	  jmp finish3
 	  notMF:
 	  finish3:
+
+	   cmp [MF], 2
+		jne nonTwo
+		mov byte[MF], 1
+
+		jmp finish6
+		nonTwo:
+		finish6:
 	
 	
 	
@@ -332,7 +366,7 @@ section '.code' code readable executable
 	start:
 		 ; Все регистры очищенный
 
-		;InputFloatNumber InputInvBuffer, counterInput, floatDotPos, InputFinalBuffer , inputmultiplier, floatBase, formatStrI, formatNumI 
+		InputFloatNumber InputInvBuffer, counterInput, _Var.floatDotPos, InputFinalBuffer , inputmultiplier, _Var.floatBase, formatStrI, formatNumI,_Var.NF
 		; Соблюдена инкапсуляция регистров
 		;;;fullClr
 
