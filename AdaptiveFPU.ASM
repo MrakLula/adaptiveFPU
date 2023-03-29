@@ -178,7 +178,7 @@ section '.data' data readable writable
 				cmp ecx, '-'
 				jne notMinSymbol
 				mov [invertText], '0'
-				mov byte[MF], 2
+				mov byte[MF], 1
 
 				jmp finish5
 				notMinSymbol:
@@ -333,6 +333,7 @@ section '.data' data readable writable
 	jmp finish4
 	EBNG:	
 	finish4:
+
 	
 	}
 
@@ -370,7 +371,7 @@ section '.code' code readable executable
 		; Соблюдена инкапсуляция регистров
 		;;;fullClr
 
-		SetNF _Var.floatBase, _Var.NF
+		;SetNF _Var.floatBase, _Var.NF
 
 		CalcDotPosition _Var.floatDotPos ;Регистр eax принимает значение точки (FloatDotPos) || Регистр edx используется как счетчик
 						;Макрос конвертирыет значение точки в нужный делитель  || после завершения макроса регистр ecx попадает в следующий макрос
